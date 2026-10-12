@@ -1,5 +1,5 @@
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 export type AuthSession = {
   access_token: string;
@@ -8,6 +8,9 @@ export type AuthSession = {
 };
 
 function headers(accessToken?: string) {
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Falta la configuración de Supabase en este despliegue.");
+  }
   return {
     apikey: supabaseKey,
     Authorization: `Bearer ${accessToken ?? supabaseKey}`,
@@ -29,12 +32,23 @@ export async function signInWithPassword(email: string, password: string): Promi
 }
 
 export async function resetPasswordForEmail(email: string) {
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Falta la configuración de Supabase en este despliegue. Revisa las variables de Vercel.");
+  }
   const response = await fetch(`${supabaseUrl}/auth/v1/recover`, {
     method: "POST",
     headers: headers(),
     body: JSON.stringify({ email, redirect_to: `${window.location.origin}/reset-password` }),
   });
-  if (!response.ok) throw new Error("No se pudo enviar el correo de recuperación.");
+  if (!response.ok) {
+    const body = await response.text();
+    let message = "No se pudo enviar el correo de recuperación.";
+    try {
+      const data = JSON.parse(body) as Record<string, unknown>;
+      message = String(data.error_description ?? data.msg ?? data.message ?? message);
+    } catch { /* Supabase puede devolver texto HTML en un error de proxy. */ }
+    throw new Error(`${message} (HTTP ${response.status})`);
+  }
 }
 
 export async function updatePassword(accessToken: string, password: string) {
