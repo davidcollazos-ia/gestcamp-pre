@@ -75,5 +75,12 @@ export async function getPlatformAdmin(accessToken: string, userId: string) {
 }
 
 export function googleSignInUrl() {
-  return `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(`${window.location.origin}/login`)}`;
+  return `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(`${window.location.origin}/login`)}&prompt=select_account`;
+}
+
+export async function signOut(accessToken: string) {
+  await fetch(`${supabaseUrl}/auth/v1/logout`, {
+    method: "POST",
+    headers: headers(accessToken),
+  });
 }
