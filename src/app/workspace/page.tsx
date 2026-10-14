@@ -1,12 +1,56 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
 import { getMyOrganizations, OrganizationMembership, signOut } from "@/lib/supabase-rest";
-type PendingInvite={name:string;email:string;role:string;organization:string};
-export default function WorkspacePage(){
- const[memberships,setMemberships]=useState<OrganizationMembership[]>([]);const[email,setEmail]=useState("");const[loading,setLoading]=useState(true);const[selected,setSelected]=useState<OrganizationMembership|null>(null);const[invites,setInvites]=useState<PendingInvite[]>([]);const[notice,setNotice]=useState("");
- useEffect(()=>{const raw=localStorage.getItem("gestcamp_session");if(!raw){window.location.href="/login";return;}const s=JSON.parse(raw) as {access_token:string;user?:{email?:string}};setEmail(s.user?.email??"");if((s.user?.email??"").toLowerCase()==="gestcamp370@gmail.com"){window.location.href="/admin";return;}getMyOrganizations(s.access_token).then(setMemberships).finally(()=>setLoading(false));},[]);
- async function logout(){const raw=localStorage.getItem("gestcamp_session");if(raw){try{await signOut((JSON.parse(raw) as {access_token:string}).access_token)}catch{}}localStorage.removeItem("gestcamp_session");window.location.href="/login";}
- function invite(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);setInvites(x=>[...x,{name:String(f.get("name")),email:String(f.get("email")),role:String(f.get("role")),organization:selected?.organization?.name??"Organización"}]);setNotice("Invitación preparada. El envío de correo se conectará en el siguiente paso.");e.currentTarget.reset();}
- if(loading)return <main className="flex min-h-screen items-center justify-center bg-[#f4f8fc] text-sm text-[#55708c]">Cargando tus organizaciones…</main>;
- return <main className="min-h-screen bg-[#f4f8fc] px-5 py-8 text-[#102a43] sm:px-10"><div className="mx-auto max-w-5xl"><header className="flex items-start justify-between gap-4"><div><p className="text-sm text-[#55708c]">Espacio de trabajo</p><h1 className="mt-1 text-3xl font-semibold">Mis organizaciones</h1><p className="mt-2 text-sm text-[#55708c]">{email}</p></div><button onClick={logout} className="rounded-xl border border-[#d8e3ef] bg-white px-4 py-2 text-sm font-semibold">Cerrar sesión</button></header>{memberships.length===0?<section className="mt-10 rounded-2xl border border-[#d8e3ef] bg-white p-8"><h2 className="text-xl font-semibold">Todavía no tienes una organización asignada</h2><p className="mt-2 text-sm text-[#55708c]">Un administrador puede invitarte a una organización o puedes solicitar el alta.</p></section>:<><section className="mt-8 grid gap-4 md:grid-cols-2">{memberships.map(m=><article key={m.organization_id} className="rounded-2xl border border-[#d8e3ef] bg-white p-6 shadow"><p className="text-xs font-semibold uppercase tracking-wide text-[#6f86a0]">{m.organization?.organization_type??"Organización"}</p><h2 className="mt-2 text-xl font-semibold">{m.organization?.name??"Organización"}</h2><p className="mt-1 text-sm text-[#55708c]">Rol: {m.role?.name??"Miembro"}</p><button onClick={()=>{setSelected(m);setNotice("")}} className="mt-6 rounded-xl bg-[#1a73e8] px-4 py-2 text-sm font-semibold text-white">Gestionar usuarios</button></article>)}</section>{selected&&<section className="mt-8 rounded-2xl border border-[#d8e3ef] bg-white p-6 shadow"><div className="flex items-start justify-between"><div><p className="text-sm text-[#55708c]">Administración de organización</p><h2 className="mt-1 text-2xl font-semibold">Invitar usuario</h2><p className="mt-1 text-sm text-[#55708c]">{selected.organization?.name}</p></div><button onClick={()=>setSelected(null)} className="text-sm font-semibold text-[#55708c]">Cerrar</button></div>{notice&&<p className="mt-5 rounded-xl bg-[#eaf2fb] p-3 text-sm text-[#1559a6]">{notice}</p>}<form onSubmit={invite} className="mt-6 grid gap-4 md:grid-cols-2"><label className="text-sm font-medium">Nombre completo<input name="name" required className="mt-2 w-full rounded-xl border border-[#d8e3ef] px-3 py-2.5" placeholder="Nombre y apellidos"/></label><label className="text-sm font-medium">Correo electrónico<input name="email" type="email" required className="mt-2 w-full rounded-xl border border-[#d8e3ef] px-3 py-2.5" placeholder="persona@email.com"/></label><label className="text-sm font-medium">Rol<select name="role" className="mt-2 w-full rounded-xl border border-[#d8e3ef] bg-white px-3 py-2.5"><option>Administrador de organización</option><option>Responsable de sección</option><option>Monitor</option><option>Miembro</option></select></label><div className="flex items-end"><button className="w-full rounded-xl bg-[#1a73e8] px-4 py-2.5 text-sm font-semibold text-white">Preparar invitación</button></div></form>{invites.filter(i=>i.organization===selected.organization?.name).length>0&&<div className="mt-8"><h3 className="font-semibold">Invitaciones preparadas</h3><div className="mt-3 divide-y rounded-xl border border-[#d8e3ef]">{invites.filter(i=>i.organization===selected.organization?.name).map((i,n)=><div key={n} className="flex items-center justify-between gap-4 p-3 text-sm"><span><strong>{i.name}</strong><br/><span className="text-[#55708c]">{i.email}</span></span><span className="rounded-full bg-[#eaf2fb] px-3 py-1 text-xs font-semibold text-[#1559a6]">{i.role}</span></div>)}</div></div>}</section>}</>}</div></main>;
+
+type Invite = { name:string; email:string; role:string };
+
+export default function WorkspacePage() {
+  const [memberships, setMemberships] = useState<OrganizationMembership[]>([]);
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<OrganizationMembership | null>(null);
+  const [invites, setInvites] = useState<Invite[]>([]);
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    const raw = localStorage.getItem("gestcamp_session");
+    if (!raw) { window.location.href = "/login"; return; }
+    const session = JSON.parse(raw) as { access_token:string; user?:{email?:string} };
+    const currentEmail = session.user?.email ?? "";
+    setEmail(currentEmail);
+    if (currentEmail.toLowerCase() === "gestcamp370@gmail.com") { window.location.href = "/admin"; return; }
+    getMyOrganizations(session.access_token).then(setMemberships).finally(() => setLoading(false));
+  }, []);
+
+  async function logout() {
+    const raw = localStorage.getItem("gestcamp_session");
+    if (raw) { try { await signOut((JSON.parse(raw) as {access_token:string}).access_token); } catch {} }
+    localStorage.removeItem("gestcamp_session"); window.location.href = "/login";
+  }
+
+  function submitInvite(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    setInvites((items) => [...items, { name:String(form.get("name")), email:String(form.get("email")), role:String(form.get("role")) }]);
+    setNotice("Invitación preparada. El envío de correo se conectará en el siguiente paso.");
+    event.currentTarget.reset();
+  }
+
+  if (loading) return <main className="flex min-h-screen items-center justify-center bg-[#f4f8fc]">Cargando tus organizaciones…</main>;
+
+  return (
+    <main className="min-h-screen bg-[#f4f8fc] px-5 py-8 text-[#102a43] sm:px-10">
+      <div className="mx-auto max-w-5xl">
+        <header className="flex items-start justify-between gap-4">
+          <div><p className="text-sm text-[#55708c]">Espacio de trabajo</p><h1 className="mt-1 text-3xl font-semibold">Mis organizaciones</h1><p className="mt-2 text-sm text-[#55708c]">{email}</p></div>
+          <button onClick={logout} className="rounded-xl border border-[#d8e3ef] bg-white px-4 py-2 text-sm font-semibold">Cerrar sesión</button>
+        </header>
+        {memberships.length === 0 && <section className="mt-10 rounded-2xl border border-[#d8e3ef] bg-white p-8"><h2 className="text-xl font-semibold">Todavía no tienes una organización asignada</h2><p className="mt-2 text-sm text-[#55708c]">Un administrador puede invitarte a una organización.</p></section>}
+        <section className="mt-8 grid gap-4 md:grid-cols-2">
+          {memberships.map((membership) => <article key={membership.organization_id} className="rounded-2xl border border-[#d8e3ef] bg-white p-6 shadow"><p className="text-xs uppercase text-[#6f86a0]">{membership.organization?.organization_type ?? "Organización"}</p><h2 className="mt-2 text-xl font-semibold">{membership.organization?.name ?? "Organización"}</h2><p className="mt-1 text-sm text-[#55708c]">Rol: {membership.role?.name ?? "Miembro"}</p><button onClick={() => { setSelected(membership); setNotice(""); }} className="mt-6 rounded-xl bg-[#1a73e8] px-4 py-2 text-sm font-semibold text-white">Gestionar usuarios</button></article>)}
+        </section>
+        {selected && <section className="mt-8 rounded-2xl border border-[#d8e3ef] bg-white p-6 shadow"><div className="flex justify-between"><div><p className="text-sm text-[#55708c]">Administración de organización</p><h2 className="text-2xl font-semibold">Invitar usuario</h2><p className="text-sm text-[#55708c]">{selected.organization?.name}</p></div><button onClick={() => setSelected(null)} className="text-sm text-[#55708c]">Cerrar</button></div>{notice && <p className="mt-5 rounded-xl bg-[#eaf2fb] p-3 text-sm text-[#1559a6]">{notice}</p>}<form onSubmit={submitInvite} className="mt-6 grid gap-4 md:grid-cols-2"><label className="text-sm font-medium">Nombre completo<input name="name" required className="mt-2 w-full rounded-xl border border-[#d8e3ef] px-3 py-2.5" /></label><label className="text-sm font-medium">Correo electrónico<input name="email" type="email" required className="mt-2 w-full rounded-xl border border-[#d8e3ef] px-3 py-2.5" /></label><label className="text-sm font-medium">Rol<select name="role" className="mt-2 w-full rounded-xl border border-[#d8e3ef] bg-white px-3 py-2.5"><option>Administrador de organización</option><option>Responsable de sección</option><option>Monitor</option><option>Miembro</option></select></label><button className="rounded-xl bg-[#1a73e8] px-4 py-2.5 font-semibold text-white">Preparar invitación</button></form>{invites.length > 0 && <div className="mt-6"><h3 className="font-semibold">Invitaciones preparadas</h3>{invites.map((invite, index) => <p key={index} className="mt-2 rounded-xl border border-[#d8e3ef] p-3 text-sm">{invite.name} · {invite.email} · {invite.role}</p>)}</div>}</section>}
+      </div>
+    </main>
+  );
 }
