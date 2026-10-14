@@ -61,7 +61,12 @@ export async function updatePassword(accessToken: string, password: string) {
 }
 
 export async function getPlatformAdmin(accessToken: string, userId: string) {
-  const response = await fetch(`${supabaseUrl}/rest/v1/platform_admins?user_id=eq.${userId}&select=user_id`, {
+  const meResponse = await fetch(`${supabaseUrl}/auth/v1/user`, { headers: headers(accessToken) });
+  if (meResponse.ok) {
+    const me = await meResponse.json() as { id?: string };
+    userId = me.id ?? userId;
+  }
+  const response = await fetch(`${supabaseUrl}/rest/v1/platform_admins?user_id=eq.${encodeURIComponent(userId)}&select=user_id`, {
     headers: headers(accessToken),
   });
   if (!response.ok) return false;
