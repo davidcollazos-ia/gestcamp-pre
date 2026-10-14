@@ -1,48 +1,12 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { getPlatformAdmin, signOut, AuthSession } from "@/lib/supabase-rest";
-
-export default function AdminPage() {
-  const [status, setStatus] = useState<"loading" | "allowed" | "denied">("loading");
-  const [email, setEmail] = useState("");
-  const logout = async () => {
-    const raw = localStorage.getItem("gestcamp_session");
-    if (raw) {
-      try { await signOut((JSON.parse(raw) as AuthSession).access_token); } catch { /* limpiar siempre la sesión local */ }
-    }
-    localStorage.removeItem("gestcamp_session");
-    window.location.href = "/login";
-  };
-
-  useEffect(() => {
-    const raw = localStorage.getItem("gestcamp_session");
-    if (!raw) { window.location.href = "/login"; return; }
-    const session = JSON.parse(raw) as AuthSession;
-    const claims = decodeJwtClaims(session.access_token);
-    const identityEmail = session.user.email ?? String(claims.email ?? "");
-    const identityId = session.user.id || String(claims.sub ?? "");
-    setEmail(identityEmail);
-    if (identityEmail.toLowerCase() === "gestcamp370@gmail.com" || identityId === "884da233-0b1b-40d9-adc0-87cd0e4bd620") {
-      setStatus("allowed");
-      return;
-    }
-    getPlatformAdmin(session.access_token, identityId).then((allowed) => setStatus(allowed ? "allowed" : "denied"));
-  }, []);
-
-  if (status === "loading") return <main className="flex min-h-screen items-center justify-center bg-[#f4f8fc] text-sm text-[#55708c]">Comprobando permisos…</main>;
-  if (status === "denied") return <main className="flex min-h-screen items-center justify-center bg-[#f4f8fc] px-5"><section className="rounded-3xl border border-[#d8e3ef] bg-white p-8 text-center shadow-[0_12px_40px_rgba(16,42,67,0.08)]"><h1 className="text-xl font-semibold text-[#102a43]">Acceso no autorizado</h1><p className="mt-2 text-[#55708c]">Tu usuario no tiene permisos de superadministrador.</p><button onClick={logout} className="mt-5 rounded-xl bg-[#1a73e8] px-4 py-2 font-semibold text-white hover:bg-[#1559a6]">Volver al login</button></section></main>;
-  return <main className="min-h-screen bg-[#f4f8fc] px-5 py-8 text-[#102a43] sm:px-10"><div className="mx-auto max-w-5xl"><header className="flex items-center justify-between"><div><p className="text-sm text-[#55708c]">Panel de plataforma</p><h1 className="mt-1 text-3xl font-semibold">Superadministración</h1></div><button onClick={logout} className="rounded-xl border border-[#d8e3ef] bg-white px-4 py-2 text-sm font-semibold hover:bg-[#f1f6fb]">Cerrar sesión</button></header><div className="mt-8 rounded-2xl border border-[#d8e3ef] bg-white p-6 shadow-[0_8px_28px_rgba(16,42,67,0.05)]"><p className="text-sm text-[#6f86a0]">Sesión activa</p><p className="mt-1 font-semibold">{email}</p><p className="mt-5 inline-flex rounded-full bg-[#eaf2fb] px-3 py-1 text-xs font-semibold text-[#1559a6]">platform_admin</p></div><div className="mt-5 grid gap-4 sm:grid-cols-3"><Card title="Organizaciones" text="Crear y aprobar tenants" /><Card title="Solicitudes" text="Revisar altas pendientes" /><Card title="Catálogos" text="Supervisar compartición" /></div></div></main>;
-}
-
-function Card({ title, text }: { title: string; text: string }) { return <div className="rounded-2xl border border-[#d8e3ef] bg-white p-5 shadow-[0_8px_28px_rgba(16,42,67,0.04)]"><h2 className="font-semibold text-[#102a43]">{title}</h2><p className="mt-2 text-sm text-[#55708c]">{text}</p></div>; }
-
-function decodeJwtClaims(token: string): Record<string, unknown> {
-  try {
-    const payload = token.split(".")[1];
-    if (!payload) return {};
-    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
-    return JSON.parse(window.atob(padded)) as Record<string, unknown>;
-  } catch { return {}; }
-}
+type Org={name:string;type:string;code:string;parent:string;status:string;[key:string]:string};
+const demo:Org[]=[{name:"Asociación Horizonte",type:"Asociación",code:"ASOC-HORIZONTE",parent:"Sin organización superior",status:"Activa"},{name:"Grupo Scout Sierra Norte",type:"Grupo scout",code:"GRUPO-SIERRA-NORTE",parent:"Asociación Horizonte",status:"Activa"}];
+const input="mt-2 w-full rounded-xl border border-[#d8e3ef] px-3 py-2.5";
+export default function AdminPage(){const[ok,setOk]=useState(false);const[email,setEmail]=useState("");const[show,setShow]=useState<"list"|"create">("list");const[orgs,setOrgs]=useState<Org[]>(demo);const[notice,setNotice]=useState("");
+useEffect(()=>{const raw=localStorage.getItem("gestcamp_session");if(!raw){location.href="/login";return}const s=JSON.parse(raw) as AuthSession;const id=s.user.id;setEmail(s.user.email??"");if(s.user.email?.toLowerCase()==="gestcamp370@gmail.com"){setOk(true);return}getPlatformAdmin(s.access_token,id).then(setOk)},[]);
+const logout=async()=>{const raw=localStorage.getItem("gestcamp_session");if(raw)try{await signOut((JSON.parse(raw) as AuthSession).access_token)}catch{}localStorage.removeItem("gestcamp_session");location.href="/login"};
+function create(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);const o=Object.fromEntries(f.entries()) as Record<string,string>;setOrgs(x=>[...x,{...o,name:o.name,type:o.type,code:o.code,parent:o.parent,status:"Pendiente de activación"}]);setNotice("Organización creada y pendiente de activación.");setShow("list");e.currentTarget.reset()}
+if(!ok)return <main className="flex min-h-screen items-center justify-center bg-[#f4f8fc]">Comprobando permisos…</main>;
+return <main className="min-h-screen bg-[#f4f8fc] px-5 py-8 text-[#102a43] sm:px-10"><div className="mx-auto max-w-5xl"><header className="flex justify-between"><div><p className="text-sm text-[#55708c]">Panel de plataforma</p><h1 className="text-3xl font-semibold">Superadministración</h1><p className="mt-2 text-sm">{email}</p></div><button onClick={logout} className="h-fit rounded-xl border border-[#d8e3ef] bg-white px-4 py-2 font-semibold">Cerrar sesión</button></header>{notice&&<p className="mt-5 rounded-xl bg-[#eaf2fb] p-3 text-sm text-[#1559a6]">{notice}</p>}{show==="list"?<><div className="mt-8 flex items-center justify-between"><div><h2 className="text-2xl font-semibold">Organizaciones</h2><p className="text-sm text-[#55708c]">Crea la organización y después gestiona sus usuarios.</p></div><button onClick={()=>setShow("create")} className="rounded-xl bg-[#1a73e8] px-4 py-2 font-semibold text-white">+ Nueva organización</button></div><section className="mt-5 overflow-hidden rounded-2xl border border-[#d8e3ef] bg-white">{orgs.map(o=><div key={o.code} className="flex justify-between border-b border-[#e6eef6] p-5 last:border-0"><span><strong>{o.name}</strong><br/><small className="text-[#55708c]">{o.type} · {o.code} · Superior: {o.parent}</small></span><span className="text-sm text-[#1559a6]">{o.status}</span></div>)}</section></>:<section className="mt-8 rounded-2xl border border-[#d8e3ef] bg-white p-6"><button onClick={()=>setShow("list")} className="text-sm text-[#55708c]">← Volver</button><h2 className="mt-4 text-2xl font-semibold">Crear organización</h2><form onSubmit={create} className="mt-6 grid gap-5 md:grid-cols-2"><label>Nombre oficial *<input name="name" required className={input} placeholder="Asociación Scout Horizonte"/></label><label>Nombre visible<input name="displayName" className={input} placeholder="Nombre corto"/></label><label>Tipo *<select name="type" required className={input}><option>Federación</option><option>Asociación</option><option>Grupo scout</option><option>Fundación</option><option>Otra organización</option></select></label><label>CIF / NIF (opcional)<input name="cif" className={input} placeholder="Puede dejarse vacío"/></label><label>Identificador interno *<input name="code" required className={input} placeholder="ASOC-HORIZONTE"/></label><label>Organización superior<select name="parent" className={input}><option>Sin organización superior</option>{orgs.map(o=><option key={o.code}>{o.name}</option>)}</select></label><label>Relación<select name="relationship" className={input}><option>Independiente</option><option>Dependiente</option><option>Federada</option><option>Colaboradora</option></select></label><label className="md:col-span-2">Descripción<input name="description" className={input} placeholder="Describe brevemente la organización"/></label><h3 className="font-semibold md:col-span-2">Dirección postal</h3><label>Dirección<input name="address" className={input} placeholder="Calle, número, piso"/></label><label>Código postal<input name="postalCode" className={input}/></label><label>Localidad<input name="city" className={input}/></label><label>Provincia / comunidad<input name="region" className={input}/></label><label>País *<input name="country" required defaultValue="España" className={input}/></label><h3 className="font-semibold md:col-span-2">Persona de contacto</h3><label>Nombre de contacto *<input name="contactName" required className={input} placeholder="Nombre y apellidos"/></label><label>Cargo o función<input name="contactRole" className={input} placeholder="Presidente/a"/></label><label>Correo de contacto *<input name="contactEmail" required type="email" className={input} placeholder="correo@organizacion.org"/></label><label>Teléfono<input name="phone" className={input}/></label><label>Web<input name="website" className={input} placeholder="https://..."/></label><button className="rounded-xl bg-[#1a73e8] px-5 py-2.5 font-semibold text-white md:col-span-2">Crear organización</button></form></section>}</div></main>}
