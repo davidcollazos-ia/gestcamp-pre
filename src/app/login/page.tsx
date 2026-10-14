@@ -20,7 +20,7 @@ export default function LoginPage() {
       const session = { access_token: accessToken, refresh_token: refreshToken, user: { id: userId || String(claims.sub ?? ""), email: String(claims.email ?? "") } };
       localStorage.setItem("gestcamp_session", JSON.stringify(session));
       window.history.replaceState(null, "", "/login");
-      window.location.href = "/admin";
+      window.location.href = String(claims.email ?? "").toLowerCase() === "gestcamp370@gmail.com" ? "/admin" : "/workspace";
     }
   }, []);
 
@@ -29,7 +29,7 @@ export default function LoginPage() {
     try {
       const session = await signInWithPassword(email, password);
       localStorage.setItem("gestcamp_session", JSON.stringify(session));
-      window.location.href = "/admin";
+      window.location.href = email.toLowerCase() === "gestcamp370@gmail.com" ? "/admin" : "/workspace";
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "No se pudo iniciar sesión.");
     } finally { setLoading(false); }

@@ -138,6 +138,32 @@ export async function listOrganizations(accessToken: string): Promise<Organizati
   await restError(response); return await response.json() as Organization[];
 }
 
+export type OrganizationDetail = { organization: Organization; parent: Organization | null; children: Organization[]; members: Array<OrganizationUser & { role?: Role }> };
+
+export async function getOrganizationDetail(accessToken: string, id: string): Promise<OrganizationDetail> {
+  const one = await fetch(`${supabaseUrl}/rest/v1/organizations?id=eq.${encodeURIComponent(id)}&select=${organizationSelect}`, { headers: headers(accessToken) });
+  await restError(one);
+  const organization = (await one.json() as Organization[])[0];
+  if (!organization) throw new Error("La organización no existe.");
+  const related = await fetch(`${supabaseUrl}/rest/v1/organizations?or=(id.eq.${encodeURIComponent(id)},parent_organization_id.eq.${encodeURIComponent(id)})&select=${organizationSelect}&order=name.asc`, { headers: headers(accessToken) });
+  await restError(related);
+  const allRelated = await related.json() as Organization[];
+  let parent: Organization | null = null;
+  if (organization.parent_organization_id) {
+    const parentResponse = await fetch(`${supabaseUrl}/rest/v1/organizations?id=eq.${encodeURIComponent(organization.parent_organization_id)}&select=${organizationSelect}`, { headers: headers(accessToken) });
+    await restError(parentResponse);
+    parent = (await parentResponse.json() as Organization[])[0] ?? null;
+  }
+  const membersResponse = await fetch(`${supabaseUrl}/rest/v1/organization_members?organization_id=eq.${encodeURIComponent(id)}&select=id,organization_id,user_id,role_id,status,created_at&order=created_at.asc`, { headers: headers(accessToken) });
+  await restError(membersResponse);
+  const members = await membersResponse.json() as OrganizationUser[];
+  const roleIds = members.map(member => member.role_id).filter(Boolean).join(",");
+  const rolesResponse = roleIds ? await fetch(`${supabaseUrl}/rest/v1/roles?id=in.(${roleIds})&select=id,organization_id,name,permissions`, { headers: headers(accessToken) }) : null;
+  if (rolesResponse) await restError(rolesResponse);
+  const roles = rolesResponse ? await rolesResponse.json() as Role[] : [];
+  return { organization, parent, children: allRelated.filter(item => item.id !== id), members: members.map(member => ({ ...member, role: roles.find(role => role.id === member.role_id) })) };
+}
+
 export async function createOrganization(accessToken: string, input: OrganizationInput): Promise<Organization> {
   const response = await fetch(`${supabaseUrl}/rest/v1/organizations`, { method: "POST", headers: { ...headers(accessToken), Prefer: "return=representation" }, body: JSON.stringify(input) });
   await restError(response); return (await response.json() as Organization[])[0];
