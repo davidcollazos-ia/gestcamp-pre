@@ -152,3 +152,46 @@ export async function deleteOrganization(accessToken: string, id: string): Promi
   const response = await fetch(`${supabaseUrl}/rest/v1/organizations?id=eq.${encodeURIComponent(id)}`, { method: "DELETE", headers: headers(accessToken) });
   await restError(response);
 }
+
+export type OrganizationUser = {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  role_id: string | null;
+  status: string;
+  created_at: string;
+};
+
+export type OrganizationInvitation = {
+  id: string;
+  organization_id: string;
+  email: string;
+  role_id: string | null;
+  status: string;
+  created_at: string;
+};
+
+export type Role = { id: string; organization_id: string | null; name: string; permissions: Record<string, boolean> };
+
+export async function listOrganizationUsers(accessToken: string): Promise<OrganizationUser[]> {
+  const response = await fetch(`${supabaseUrl}/rest/v1/organization_members?select=id,organization_id,user_id,role_id,status,created_at&order=created_at.desc`, { headers: headers(accessToken) });
+  await restError(response);
+  return await response.json() as OrganizationUser[];
+}
+
+export async function listRoles(accessToken: string): Promise<Role[]> {
+  const response = await fetch(`${supabaseUrl}/rest/v1/roles?select=id,organization_id,name,permissions&order=name.asc`, { headers: headers(accessToken) });
+  await restError(response);
+  return await response.json() as Role[];
+}
+
+export async function inviteOrganizationUser(accessToken: string, input: { organization_id: string; email: string; role_id: string | null; invited_by_user_id: string }): Promise<OrganizationInvitation> {
+  const response = await fetch(`${supabaseUrl}/rest/v1/organization_invitations`, { method: "POST", headers: { ...headers(accessToken), Prefer: "return=representation" }, body: JSON.stringify({ ...input, status: "pending" }) });
+  await restError(response);
+  return (await response.json() as OrganizationInvitation[])[0];
+}
+
+export async function deleteOrganizationUser(accessToken: string, id: string): Promise<void> {
+  const response = await fetch(`${supabaseUrl}/rest/v1/organization_members?id=eq.${encodeURIComponent(id)}`, { method: "DELETE", headers: headers(accessToken) });
+  await restError(response);
+}
