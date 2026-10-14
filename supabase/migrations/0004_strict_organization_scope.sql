@@ -1,16 +1,12 @@
 -- Gestcamp: strict organization scope. Hierarchy never inherits data access.
 
-create or replace function public.can_access_org(target_org uuid) returns boolean language sql security definer set search_path=public stable as $$
-  select public.is_platform_admin() or public.is_org_member(target_org);
-$$;
+create or replace function public.is_org_member(target_org uuid) returns boolean language sql security definer set search_path=public stable as $$ select exists (select 1 from public.organization_members m where m.organization_id=target_org and m.user_id=auth.uid() and m.status='active'); $$;
 
-create or replace function public.is_org_admin(target_org uuid) returns boolean language sql security definer set search_path=public stable as $$
-  select public.is_platform_admin() or exists (select 1 from public.organization_members m join public.roles r on r.id=m.role_id where m.organization_id=target_org and m.user_id=auth.uid() and m.status='active' and (r.name='organization_admin' or r.permissions ? 'organizations:admin'));
-$$;
+create or replace function public.can_access_org(target_org uuid) returns boolean language sql security definer set search_path=public stable as $$ select public.is_platform_admin() or public.is_org_member(target_org); $$;
 
-create or replace function public.has_org_permission(target_org uuid, permission_key text) returns boolean language sql security definer set search_path=public stable as $$
-  select public.is_platform_admin() or exists (select 1 from public.organization_members m join public.roles r on r.id=m.role_id where m.organization_id=target_org and m.user_id=auth.uid() and m.status='active' and (r.name='organization_admin' or r.permissions ? permission_key));
-$$;
+create or replace function public.is_org_admin(target_org uuid) returns boolean language sql security definer set search_path=public stable as $$ select public.is_platform_admin() or exists (select 1 from public.organization_members m join public.roles r on r.id=m.role_id where m.organization_id=target_org and m.user_id=auth.uid() and m.status='active' and (r.name='organization_admin' or r.permissions ? 'organizations:admin')); $$;
+
+create or replace function public.has_org_permission(target_org uuid, permission_key text) returns boolean language sql security definer set search_path=public stable as $$ select public.is_platform_admin() or exists (select 1 from public.organization_members m join public.roles r on r.id=m.role_id where m.organization_id=target_org and m.user_id=auth.uid() and m.status='active' and (r.name='organization_admin' or r.permissions ? permission_key)); $$;
 
 drop policy if exists platform_admins_select_self_or_platform_admin on public.platform_admins;
 drop policy if exists platform_admins_select_self on public.platform_admins;
@@ -38,6 +34,3 @@ drop policy if exists organization_relationships_select_member on public.organiz
 drop policy if exists organization_relationships_manage_source_admin on public.organization_relationships;
 create policy organization_relationships_select_exact_scope on public.organization_relationships for select to authenticated using (public.can_access_org(source_organization_id) or public.can_access_org(target_organization_id));
 create policy organization_relationships_manage_source_admin on public.organization_relationships for all to authenticated using (public.is_org_admin(source_organization_id)) with check (public.is_org_admin(source_organization_id));
-
-comment on function public.can_access_org(uuid) is 'Exact organization scope; parent and child relationships never grant inherited access.';
-comment on function public.has_org_permission(uuid,text) is 'Checks a permission only inside the exact organization membership.';
