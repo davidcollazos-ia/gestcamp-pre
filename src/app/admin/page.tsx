@@ -1,4 +1,4 @@
-"use client";
+status:"pending""use client";
 import {FormEvent,useEffect,useState} from "react";
 import {getPlatformAdmin,listOrganizations,createOrganization,signOut,AuthSession,Organization} from "@/lib/supabase-rest";
 const cls="mt-2 w-full rounded-xl border border-[#d8e3ef] px-3 py-2.5";
