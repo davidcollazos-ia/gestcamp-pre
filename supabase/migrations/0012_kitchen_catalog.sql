@@ -2,9 +2,9 @@
 create table public.kitchen_ingredients (
   id uuid primary key default gen_random_uuid(), owner_organization_id uuid references public.organizations(id) on delete restrict,
   name text not null, category text, unit text not null default 'unidad', description text, allergens text[] not null default '{}', substitute text,
-  estimated_price numeric(10,2), storage_instructions text, visibility public.catalog_visibility not null default 'private', status text not null default 'active',
+  estimated_unit_price numeric(10,2), storage_instructions text, visibility public.catalog_visibility not null default 'private', status text not null default 'active',
   created_by uuid references auth.users(id) on delete set null, created_at timestamptz not null default now(), updated_at timestamptz not null default now(),
-  constraint kitchen_ingredients_name_valid check (length(trim(name)) > 0), constraint kitchen_ingredients_price_valid check (estimated_price is null or estimated_price >= 0)
+  constraint kitchen_ingredients_name_valid check (length(trim(name)) > 0), constraint kitchen_ingredients_price_valid check (estimated_unit_price is null or estimated_unit_price >= 0)
 );
 create index kitchen_ingredients_owner_idx on public.kitchen_ingredients(owner_organization_id);
 
