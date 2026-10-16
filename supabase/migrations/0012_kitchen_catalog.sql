@@ -27,7 +27,7 @@ create table public.kitchen_recipe_ingredients (
 
 create table public.kitchen_dietary_requirements (
   id uuid primary key default gen_random_uuid(), owner_organization_id uuid references public.organizations(id) on delete restrict,
-  name text not null, description text, severity text not null default 'preference', status text not null default 'active', created_at timestamptz not null default now()
+  name text not null, description text, severity text not null default 'preference', status text not null default 'active', created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
 
 create table public.kitchen_menus (
