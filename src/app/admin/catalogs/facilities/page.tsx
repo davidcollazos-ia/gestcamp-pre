@@ -1,8 +1,9 @@
 "use client";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { AuthSession, createFacility, deleteFacility, Facility, FacilityInput, FacilityLocation, listFacilities, listOrganizations, Organization, shareFacilityUp, updateFacility } from "@/lib/supabase-rest";
+import { catalogInput } from "@/components/catalog-ui";
 declare global { interface Window { L?: any } }
-const field="mt-1 w-full rounded-xl border border-[#d7e3ef] bg-white px-3 py-2.5";
+const field=catalogInput;
 const empty:FacilityLocation={location_method:"administrative",country_code:"ES",country_name:"España",region_code:null,region_name:null,province_code:null,province_name:null,municipality_code:null,municipality_name:null,latitude:null,longitude:null,accuracy:"administrative",address:null,postal_code:null,notes:null};
 const tabs=["Datos generales","Ubicación","Capacidad y espacios","Servicios y accesibilidad","Normas y disponibilidad","Propietario y contacto"];
 const services=[["wifi_available","Wi‑Fi"],["accessible","Accesibilidad"],["kitchen_available","Cocina"],["dining_available","Comedor"],["heating_available","Calefacción"],["electricity_available","Electricidad"],["drinking_water_available","Agua potable"],["parking_available","Aparcamiento"],["fire_area_available","Zona de fuego"],["pets_allowed","Mascotas permitidas"]] as const;
