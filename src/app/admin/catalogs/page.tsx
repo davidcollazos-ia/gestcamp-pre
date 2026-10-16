@@ -3,6 +3,8 @@
 const catalogs = [
   { name: "Instalaciones", description: "Albergues, campings, refugios, polideportivos y zonas de acampada.", href: "/admin/catalogs/facilities", status: "Disponible" },
   { name: "Cocina", description: "Recetas, menús, alergias, dietas y planificación de cocina.", href: "/admin/catalogs/kitchen", status: "En preparación" },
+  { name: "Actividades", description: "Actividades, dinámicas y propuestas para organizar el programa del campamento.", href: "/admin/catalogs/activities", status: "En preparación" },
+  { name: "Rutas", description: "Rutas, recorridos y propuestas de itinerarios para las salidas y excursiones.", href: "/admin/catalogs/routes", status: "En preparación" },
 ];
 
 export default function CatalogsIndexPage() {

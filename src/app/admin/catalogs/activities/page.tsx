@@ -1,0 +1,5 @@
+"use client";
+
+export default function ActivitiesCatalogPage() {
+  return <main className="min-h-screen bg-[#f4f8fc] px-5 py-8 text-[#062b52]"><div className="mx-auto max-w-6xl"><div className="flex flex-wrap items-center justify-between gap-4"><a href="/admin/catalogs" className="font-semibold text-[#1769e8]">← Catálogos</a><a href="/admin" className="font-semibold text-[#1769e8]">Panel de administración</a></div><header className="mt-8"><p className="text-sm font-semibold uppercase tracking-wide text-[#1769e8]">Catálogos · Actividades</p><h1 className="mt-1 text-4xl font-bold">Actividades</h1><p className="mt-2 text-[#5a7693]">Gestiona las actividades y dinámicas disponibles para tus campamentos.</p></header><section className="mt-8 rounded-2xl border border-[#d7e3ef] bg-white p-8 shadow-sm"><h2 className="text-2xl font-bold">Catálogo en preparación</h2><p className="mt-3 text-[#5a7693]">Aquí podrás crear, organizar y compartir actividades por edades, categorías, duración y material necesario.</p></section></div></main>;
+}
