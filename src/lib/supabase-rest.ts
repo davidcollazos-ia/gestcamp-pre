@@ -78,3 +78,7 @@ export async function listShoppingItems(t:string,menuId:string){return kitchenRe
 export async function saveShoppingItem(t:string,input:Omit<KitchenShoppingItem,"id">){return (await kitchenRequest<KitchenShoppingItem[]>(t,"kitchen_shopping_items",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify(input)}))[0]}
 export async function updateShoppingItem(t:string,id:string,input:Partial<Omit<KitchenShoppingItem,"id">>){return (await kitchenRequest<KitchenShoppingItem[]>(t,"kitchen_shopping_items?id=eq."+encodeURIComponent(id),{method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify(input)}))[0]}
 export async function deleteShoppingItem(t:string,id:string){return kitchenRequest<void>(t,"kitchen_shopping_items?id=eq."+encodeURIComponent(id),{method:"DELETE"})}
+export type KitchenAllergen={id:string;owner_organization_id:string;name:string;description:string|null;status:string;created_at:string;updated_at:string};
+export type KitchenAllergenInput=Omit<KitchenAllergen,"id"|"created_at"|"updated_at">;
+export async function listKitchenAllergens(t:string){return kitchenRequest<KitchenAllergen[]>(t,"kitchen_allergens?select=id,owner_organization_id,name,description,status,created_at,updated_at&order=name.asc")}
+export async function createKitchenAllergen(t:string,input:KitchenAllergenInput){return (await kitchenRequest<KitchenAllergen[]>(t,"kitchen_allergens",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify(input)}))[0]}
