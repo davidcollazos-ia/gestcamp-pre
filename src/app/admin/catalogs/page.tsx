@@ -5,6 +5,9 @@ const catalogs = [
   { name: "Cocina", description: "Recetas, menús, alergias, dietas y planificación de cocina.", href: "/admin/catalogs/kitchen", status: "Disponible-beta" },
   { name: "Actividades", description: "Actividades, dinámicas y propuestas para organizar el programa del campamento.", href: "/admin/catalogs/activities", status: "Disponible-beta" },
   { name: "Rutas", description: "Rutas, recorridos y propuestas de itinerarios para las salidas y excursiones.", href: "/admin/catalogs/routes", status: "Disponible-beta" },
+  { name: "Monitores", description: "Fichas de monitores, perfiles, formación, disponibilidad y asignaciones.", href: "/admin/catalogs/monitors", status: "Disponible-beta" },
+  { name: "Miembros", description: "Personas participantes, responsables y contactos vinculados a la organización.", href: "/admin/catalogs/members", status: "Disponible-beta" },
+  { name: "Secciones", description: "Estructura y organización interna de las secciones de cada campamento.", href: "/admin/catalogs/sections", status: "Disponible-beta" },
 ];
 
 export default function CatalogsIndexPage() {
