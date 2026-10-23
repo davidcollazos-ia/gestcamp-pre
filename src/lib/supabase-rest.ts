@@ -31,6 +31,7 @@ export type Member={id:string;user_id:string|null;first_name:string;last_name:st
 export type MemberInput=Omit<Member,"id"|"created_at"|"updated_at">;
 export type MemberOrganization={id:string;organization_id:string;member_id:string;role_id:string|null;role:string|null;is_monitor:boolean;monitor_alias:string|null;monitor_responsibility:string|null;status:string;created_at:string;updated_at:string};
 export type Monitor={id:string;member_organization_id:string;alias:string|null;responsibility:string|null;created_at:string;updated_at:string};
+export type MonitorCandidate={id:string;organization_id:string;member_id:string;organization?:{name:string;display_name:string|null};member?:{first_name:string;last_name:string}};
 async function orgCrud<T>(token:string,path:string,init?:RequestInit){const response=await fetch(supabaseUrl+"/rest/v1/"+path,{...init,headers:{...headers(token),...(init?.headers||{})}});await organizationError(response);if(response.status===204)return undefined as T;return await response.json() as T}
 const sectionSelect="id,organization_id,name,alias,age_min,age_max,created_at,updated_at";
 const memberSelect="id,user_id,first_name,last_name,national_id,phone,email,birth_date,parent1_first_name,parent1_last_name,parent1_national_id,parent1_phone,parent1_email,parent1_address,parent2_first_name,parent2_last_name,parent2_national_id,parent2_phone,parent2_email,parent2_address,observations,created_at,updated_at";
@@ -45,6 +46,7 @@ export async function deleteMember(t:string,id:string){return orgCrud<void>(t,"m
 export async function listMemberOrganizations(t:string,memberId:string){return orgCrud<MemberOrganization[]>(t,"member_organizations?member_id=eq."+encodeURIComponent(memberId)+"&order=created_at.asc")}
 export async function saveMemberOrganization(t:string,input:Omit<MemberOrganization,"id"|"created_at"|"updated_at">){return (await orgCrud<MemberOrganization[]>(t,"member_organizations",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify(input)}))[0]}
 export async function listMonitors(t:string){return orgCrud<Monitor[]>(t,"monitors?select=id,member_organization_id,alias,responsibility,created_at,updated_at&order=created_at.desc")}
+export async function listMonitorCandidates(t:string){return orgCrud<MonitorCandidate[]>(t,"member_organizations?select=id,organization_id,member_id,organization:organizations(name,display_name),member:members(first_name,last_name)&order=created_at.asc")}
 export async function createMonitor(t:string,input:Omit<Monitor,"id"|"created_at"|"updated_at">){return (await orgCrud<Monitor[]>(t,"monitors",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify(input)}))[0]}
 export async function updateMonitor(t:string,id:string,input:Partial<Omit<Monitor,"id"|"created_at"|"updated_at">>){return (await orgCrud<Monitor[]>(t,"monitors?id=eq."+encodeURIComponent(id),{method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify(input)}))[0]}
 export async function deleteMonitor(t:string,id:string){return orgCrud<void>(t,"monitors?id=eq."+encodeURIComponent(id),{method:"DELETE"})}
